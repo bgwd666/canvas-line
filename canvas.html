@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="Generator" content="EditPlus®">
+  <meta name="Author" content="">
+  <meta name="Keywords" content="">
+  <meta name="Description" content="">
+  <link rel='icon' href='images/pic1.ico ' type=‘image/x-ico’ />
+  <title>canvas-line</title>
+
+  <style type='text/css'>
+  *{
+    margin:0;
+	padding:0;
+	}
+   body{
+	overflow:hidden;
+	}
+   #canvas{
+   display:block;
+   background-color:#000;
+   }
+  </style>
+ </head>
+ <body>
+  <canvas id='canvas'>对不起您的浏览器不支持画布</canvas>
+ </body>
+  <script>
+		
+		var candraw=canvas.getContext('2d');
+		var w,h; //存放屏幕宽高
+		var mousex=0,mousey=0;
+		//var initcolor=['#FF99CC','#FF6666','#FFFF00','#993366','#CCCCFF','#fff'];
+		var aBall=[];//存放球球
+		
+
+		change = new Object(); //创建存放可下文一些变量,便于维护
+		change={ //可修改属性
+			ballAndMousecolor:'#FF99CC', //球和鼠标连线颜色
+			ballAndMouseDis:200,  //球和鼠标小于这个距离会 产生连线
+            ballAndballcolor:'#6699CC',  //球和球连线颜色
+            ballAndballDis:150  //球和球小于这个距离会 产生连线
+		}
+	
+		~~function setSize(){
+		    window.onresize=arguments.callee;//当用户调整窗口时自调用自身函数
+            w=window.innerWidth; //屏幕宽度 
+			h=window.innerHeight;//屏幕高度
+			canvas.width=w;
+			canvas.height=h; //设置画布宽高为屏幕大小
+		}();
+        
+		//构造函数  创一个球的函数
+		function Ball(){};
+
+    function random(min,max) //随机返回min到max之间的数
+		{
+			return Math.random()*(max-min)+min; //random()取值为[0,1)
+		}
+       
+		Ball.prototype={ //添加原型属性
+
+				init:function(){ //初始化
+					  fun =this; //当前事件赋值给fun对象
+					  //fun.color=initcolor[Math.floor(random(0,6))];//随机取已创建颜色数组中的颜色,floor(x)是取小于等于x的最近一个整数.
+					  fun.x=random(0,w); //0-w随机x
+					  fun.y=random(0,h); //0-h随机y
+					  fun.r=random(0.5,1);  //随机圆半径
+					  fun.vx=random(-1,1)*0.4; //随机x方向的伪速度
+					  fun.vy=random(-1,1)*0.4; //随机y方向的伪速度
+	 
+				},
+				draw:function(){ //画圆方法
+                    fun =this;
+					//var grd =candraw.createRadialGradient(fun.x,fun.y,0,fun.x,fun.y,fun.r);			
+					candraw.beginPath();//拿起笔
+					//grd.addColorStop(0,'red');
+					//grd.addColorStop(1,fun.color);
+					candraw.fillStyle='#fff'; //球的颜色
+					candraw.arc(fun.x,fun.y,fun.r,0,Math.PI*2,true);//画圆,x,y,半径,起始角度,终点角度,true表示顺时针
+					candraw.fill(); //下笔作画,填充 stroke为描边
+				},
+				move:function(){ //让球移动
+					fun=this;
+					fun.x+=fun.vx;
+					fun.y+=fun.vy;
+					if(fun.x-fun.r<0 || fun.x+fun.r>w) //x方向碰撞检测
+					{  fun.vx=-fun.vx  }
+					if(fun.y-fun.r<0 || fun.y+fun.r>h) //y方向碰撞检测
+					{  fun.vy=-fun.vy  }
+                    fun.draw();
+				
+				}
+		}
+
+        //创建球方法
+		function create(num){ 
+		  for(i=0;i<num;i++)
+			{
+				 var ball= new Ball(); //实例对象
+                 ball.init(); //激活init
+		         ball.draw();  //激活draw
+				 aBall.push(ball); //把当前这个球加入数组
+            }		
+		}
+		create(200); //创建球,调用,数字自定
+
+        //动态获取鼠标坐标
+        window.onmousemove = function (event){ 
+           event = event ||window.event; //兼容浏览器
+           mousex = event.clientX; //获取鼠标x坐标
+		   mousey = event.clientY;  //获取鼠标y坐标
+           //console.log(mousex,mousey);
+		}
+		//鼠标移出清除值
+		window.onmouseout = function (){
+		   mousex = null; 
+		   mousey = null; 
+		}
+		//求鼠标和球距离的方法
+		function ballAndMouse(obj){ 
+		   distancex = Math.abs(mousex-obj.x);
+		   distancey = Math.abs(mousey-obj.y);
+		   return Math.sqrt(distancex*distancex + distancey*distancey);		
+		}
+		//求球和球的距离的方法
+        function ballAndball(obj1,obj2){ 
+		   distancesx = Math.abs(obj1.x-obj2.x);
+		   distancesy = Math.abs(obj1.y-obj2.y);
+		   return Math.sqrt(distancesx*distancesx + distancesy*distancesy);
+		}
+		//鼠标和球连线
+        function lineMouse(obj){ 
+		  if(ballAndMouse(obj)<change.ballAndMouseDis){ //change.ballAndMouseDis 球和鼠标小于这个距离产生连线			  
+				  candraw.beginPath();
+				  candraw.lineWidth=(change.ballAndMouseDis-ballAndMouse(obj))*2/change.ballAndMouseDis;
+				  candraw.strokeStyle=change.ballAndMousecolor;
+				  candraw.moveTo(obj.x,obj.y);
+				  candraw.lineTo(mousex,mousey);			  
+				  candraw.stroke();		  
+		    }
+
+		}
+		//球和球连线
+		function lineball(){ 
+		 for(var item1 of aBall){
+             for(var item2 of aBall){
+			 if(ballAndball(item1,item2)<change.ballAndballDis){ //change.ballAndballDis 球和球小于这个距离产生连线
+				 //var grd =candraw.createLinearGradient(item1.x,item1.y,item2.x,item2.y);
+				  candraw.beginPath();
+				  candraw.lineWidth=(change.ballAndballDis-ballAndball(item1,item2))*1.5/change.ballAndballDis;
+				  //candraw.globalAlpha =(130-ballAndball(item1,item2))*1/130;
+				  //grd.addColorStop(0,'#FF0033');
+                  //grd.addColorStop(0.5,'#66CCFF');
+				 // grd.addColorStop(1,'#FFFF66');
+				  candraw.strokeStyle = change.ballAndballcolor;
+				  candraw.moveTo(item1.x,item1.y);
+				  candraw.lineTo(item2.x,item2.y);			  
+				  candraw.stroke();
+				 }
+                    
+			 }
+		  }
+		}
+        //定时器
+		setInterval(function(){ 
+			candraw.clearRect(0,0,w,h);//清除上一次屏幕
+			for(var item of aBall){   //console.log(item.x);  遍历存放球的数组,item代表数组中 从头到尾的每一个元素  
+
+				item.move();
+				
+				lineMouse(item);
+				
+			}
+			lineball();
+			//candraw.globalAlpha =1.0;
+		},1000/60); 
+		//1000/60 60赫兹是屏幕刷新频率,转换为ms
+
+    //})();
+
+ </script>
+</html>
